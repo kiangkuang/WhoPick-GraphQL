@@ -16,20 +16,33 @@ const typeDefs = `
     userId: Int!,
     name: String!,
     options: [Option!]!,
+    isEnabled: Boolean!,
   }
 
   type Option {
     id: Int!,
     option: String!,
     votes: [Vote!]!,
-    question: Question!
+    question: Question!,
   }
 
   type Vote {
     id: Int!,
     userId: Int!,
     name: String!,
-    option: Option!
+    option: Option!,
+  }
+
+  type Mutation {
+    createQuestion(userId: Int!, name: String!, question: String!): Question!,
+    createOption(questionId: Int!, option: String!): Option!,
+    createVote(optionId: Int!, userId: Int!, name: String!): Vote!,
+
+    updateQuestion(id: Int!, question: String, isEnabled: Boolean): [Boolean!],
+    updateOption(id: Int!, option: String!): [Boolean!],
+
+    deleteOption(id: Int!): Boolean!,
+    deleteVote(id: Int!): Boolean!,
   }
 `;
 
@@ -47,6 +60,35 @@ const resolvers = {
   },
   Vote: {
     option: resolver(models.Vote.Option),
+  },
+
+  Mutation: {
+    createQuestion: (_, { userId, name, question }) => {
+      const values = { userId, name, question };
+      return models.Question.create(values);
+    },
+    createOption: (_, { questionId, option }) => {
+      const values = { questionId, option };
+      return models.Option.create(values);
+    },
+    createVote: (_, { optionId, userId, name }) => {
+      const values = { optionId, userId, name };
+      return models.Vote.create(values);
+    },
+
+    updateQuestion: (_, { id, question, isEnabled }) => {
+      const values = { question, isEnabled };
+      const options = { where: { id } };
+      return models.Question.update(values, options);
+    },
+    updateOption: (_, { id, option }) => {
+      const values = { option };
+      const options = { where: { id } };
+      return models.Option.update(values, options);
+    },
+
+    deleteOption: (_, { id }) => models.Option.destroy({ where: { id } }),
+    deleteVote: (_, { id }) => models.Vote.destroy({ where: { id } }),
   },
 };
 
