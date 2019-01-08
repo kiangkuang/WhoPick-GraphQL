@@ -1,56 +1,26 @@
 import { GraphQLServer } from 'graphql-yoga';
 import { createContext, EXPECTED_OPTIONS_KEY } from 'dataloader-sequelize';
 import { resolver } from 'graphql-sequelize';
+import Sequelize from 'sequelize';
 import models from './models';
 import config from './config';
-
-const typeDefs = `
-  type Query {
-    question(id: Int!): Question,
-    questions: [Question!]!,
-  }
-
-  type Question {
-    id: Int!,
-    question: String!,
-    userId: Int!,
-    name: String!,
-    options: [Option!]!,
-    isEnabled: Boolean!,
-  }
-
-  type Option {
-    id: Int!,
-    option: String!,
-    votes: [Vote!]!,
-    question: Question!,
-  }
-
-  type Vote {
-    id: Int!,
-    userId: Int!,
-    name: String!,
-    option: Option!,
-  }
-
-  type Mutation {
-    createQuestion(userId: Int!, name: String!, question: String!): Question!,
-    createOption(questionId: Int!, option: String!): Option!,
-    createVote(optionId: Int!, userId: Int!, name: String!): Vote!,
-
-    updateQuestion(id: Int!, question: String, isEnabled: Boolean): [Boolean!],
-    updateOption(id: Int!, option: String!): [Boolean!],
-
-    deleteOption(id: Int!): Boolean!,
-    deleteVote(id: Int!): Boolean!,
-  }
-`;
+import typeDefs from './typeDefs';
 
 const resolvers = {
   Query: {
     question: resolver(models.Question),
-    questions: resolver(models.Question),
+    questionSearch: resolver(models.Question, {
+      before: (findOptions, args) => {
+        findOptions.where = {
+          userId: args.userId,
+          question: { [Sequelize.Op.like]: `%${args.query === undefined ? '' : args.query}%` },
+          isEnabled: args.isEnabled === undefined || args.isEnabled ? 1 : 0,
+        };
+        return findOptions;
+      },
+    }),
   },
+
   Question: {
     options: resolver(models.Question.Options),
   },
@@ -108,4 +78,5 @@ const server = new GraphQLServer({
     };
   },
 });
+
 server.start({ port: config.port }, () => console.log(`Server is running on localhost:${config.port}`));
