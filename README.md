@@ -7,10 +7,8 @@ A GraphQL server implementation of the WhoPick backend using [graphql-yoga](http
     yarn install
     ```
 2. Set up environment variables
-    ```
-    yarn setup
-    ```
-    * Open `.env` file and configure the `PORT` and `DB_URL` with the GraphQL server port number and MySQL DB URL
+
+    Open `.env` file and configure the `PORT` and `DB_URL` with the GraphQL server port number and MySQL DB URL
 
 3. Development
     ```
