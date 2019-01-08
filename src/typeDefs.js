@@ -9,23 +9,30 @@ type Question {
   question: String!,
   userId: Int!,
   name: String!,
-  options(limit: Int, order: String): [Option!]!,
   isEnabled: Boolean!,
-  updatedAt: String!
+  options(limit: Int, order: String): [Option!]!,
+  createdAt: String!,
+  updatedAt: String!,
 }
 
 type Option {
   id: Int!,
   option: String!,
-  votes(limit: Int, order: String): [Vote!]!,
+  questionId: Int!,
   question: Question!,
+  votes(limit: Int, order: String): [Vote!]!,
+  createdAt: String!,
+  updatedAt: String!,
 }
 
 type Vote {
   id: Int!,
   userId: Int!,
   name: String!,
+  optionId: Int!,
   option: Option!,
+  createdAt: String!,
+  updatedAt: String!,
 }
 
 type Mutation {
