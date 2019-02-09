@@ -1,7 +1,7 @@
 import { GraphQLServer } from 'graphql-yoga';
 import { createContext, EXPECTED_OPTIONS_KEY } from 'dataloader-sequelize';
 import { resolver } from 'graphql-sequelize';
-import Sequelize from 'sequelize';
+import { where, col, Op } from 'sequelize';
 import models from './models';
 import config from './config';
 import typeDefs from './typeDefs';
@@ -9,12 +9,17 @@ import typeDefs from './typeDefs';
 const resolvers = {
   Query: {
     question: resolver(models.Question),
-    questionSearch: resolver(models.Question, {
+    questions: resolver(models.Question, {
       before: (findOptions, args) => {
+        function ignoreColumn(column) {
+          return where(col(column), Op.eq, col(column));
+        }
+
         findOptions.where = {
-          userId: args.userId,
-          question: { [Sequelize.Op.like]: `%${args.query === undefined ? '' : args.query}%` },
-          isEnabled: args.isEnabled === undefined || args.isEnabled ? 1 : 0,
+          question: args.question === undefined ? ignoreColumn('question') : where(col('question'), Op.like, `%${args.question}%`),
+          userId: args.userId === undefined ? ignoreColumn('userId') : args.userId,
+          name: args.name === undefined ? ignoreColumn('name') : args.name,
+          isEnabled: args.isEnabled === undefined ? ignoreColumn('isEnabled') : args.isEnabled,
         };
         return findOptions;
       },
