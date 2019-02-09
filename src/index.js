@@ -10,16 +10,18 @@ const resolvers = {
   Query: {
     question: resolver(models.Question),
     questions: resolver(models.Question, {
-      before: (findOptions, args) => {
+      before: (findOptions, {
+        question, userId, name, isEnabled,
+      }) => {
         function ignoreColumn(column) {
           return where(col(column), Op.eq, col(column));
         }
 
         findOptions.where = {
-          question: args.question === undefined ? ignoreColumn('question') : where(col('question'), Op.like, `%${args.question}%`),
-          userId: args.userId === undefined ? ignoreColumn('userId') : args.userId,
-          name: args.name === undefined ? ignoreColumn('name') : args.name,
-          isEnabled: args.isEnabled === undefined ? ignoreColumn('isEnabled') : args.isEnabled,
+          question: question === undefined ? ignoreColumn('question') : where(col('question'), Op.like, `%${question}%`),
+          userId: userId === undefined ? ignoreColumn('userId') : userId,
+          name: name === undefined ? ignoreColumn('name') : name,
+          isEnabled: isEnabled === undefined ? ignoreColumn('isEnabled') : isEnabled,
         };
         return findOptions;
       },
