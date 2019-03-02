@@ -5,6 +5,8 @@ type Query {
 }
 
 type Mutation {
+  login (email: String!, password: String!): String,
+
   createQuestion(userId: Int!, name: String!, question: String!): Question!,
   createOption(questionId: Int!, option: String!): Option!,
   createVote(optionId: Int!, userId: Int!, name: String!): Vote!,
