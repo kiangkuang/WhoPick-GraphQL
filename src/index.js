@@ -15,37 +15,48 @@ resolver.contextToOptions = { [EXPECTED_OPTIONS_KEY]: EXPECTED_OPTIONS_KEY };
 const server = new GraphQLServer({
   typeDefs,
   resolvers,
-  context: () => {
-    // For each request, create a DataLoader context for Sequelize to use
-    const dataloaderContext = createContext(models.sequelize);
-
-    // Using the same EXPECTED_OPTIONS_KEY, store the DataLoader context
-    // in the global request context
-    return {
-      [EXPECTED_OPTIONS_KEY]: dataloaderContext,
-    };
-  },
+  context: () => ({
+    [EXPECTED_OPTIONS_KEY]: createContext(models.sequelize),
+  }),
 });
 
 server.use(cookieParser());
 server.use(expressJwt(auth.expressJwtOptions)
   .unless({ path: ['/', /\/auth*/] }));
-
-server.get('/', (_, res) => {
-  res.redirect('auth/login');
+server.use((req, res, next) => {
+  if (req.path !== '/' && !req.path.startsWith('/auth') && !auth.isAuthorized(req.user)) {
+    next(new Error('UnauthorizedError'));
+    return;
+  }
+  next();
+});
+server.use((err, req, res, next) => {
+  if (err.name === 'UnauthorizedError') {
+    res.sendStatus(401);
+    return;
+  }
+  next();
 });
 
-server.get('/auth/login', (_, res) => {
+server.get('/', (_, res) => {
+  res.redirect('/auth/login');
+});
+
+server.get('/auth/login', (req, res) => {
+  if (auth.isAuthorized(auth.isAuthenticated(req))) {
+    res.redirect('/playground');
+    return;
+  }
   res.send(`<body><script async src="https://telegram.org/js/telegram-widget.js" data-telegram-login="${config.botUsername}" data-size="large" data-auth-url="/auth/callback"></script></body>`);
 });
 
 server.get('/auth/callback', ({ query }, res) => {
-  if (auth.isAuthorized(query)) {
-    res.cookie('jwt', auth.createToken(query.id));
-    res.redirect('/playground');
-  } else {
+  if (!auth.isTelegramAuthenticationValid(query) || !auth.isAuthorized(query)) {
     res.sendStatus(403);
+    return;
   }
+  res.cookie('jwt', auth.createToken(query));
+  res.redirect('/playground');
 });
 
 server.get('/playground', expressPlayground({
